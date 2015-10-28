@@ -17,25 +17,68 @@ class ViewController: UIViewController {
     private var numCount:Int = 0
     private var avgSum:Double = 0.0
     private var avgCount:Int = 0
-    private var state:State = State.Count
+    private var state:State? = nil
     private var inputs:[UIButton] = []
     private var curValue:Double = 0.0
 
     @IBOutlet weak var window: UILabel!
     
-    
-    @IBAction func count(sender: UIButton) {
-        numCount++;
-        if state != State.Count {
-            state = State.Count
+    // Event handler for the equals button
+    @IBAction func equalsButtonPressed(sender: UIButton) {
+        if state == State.Count
+        {
+            state = nil
+            updateWindow("\(numCount)")
+            numCount = 0
+        } else if state == State.Avg
+        {
+            state = nil
+            let avg = avgSum / Double(avgCount)
+            updateWindow("\(avg)")
+            avgSum = 0
+            avgCount = 0
+        } else {
+            updateWindow("\(curValue)")
+            curValue = 0.0
         }
+        inputs.removeAll()
     }
     
+    // Event handler for normal operands
     @IBAction func operandButtonPressed(sender: UIButton) {
         inputs.append(sender)
     }
     
-    //Event handler for buttons
+    // Event handler for special the operands
+    @IBAction func specialOperandButtonPressed(sender: UIButton) {
+        let inputTitle = sender.titleLabel!.text!
+       
+        if inputs.count > 0 {
+            let amount = inputs[inputs.count - 1]
+            let doubleCheck = Double(amount.titleLabel!.text!)
+            
+            if doubleCheck != nil {
+                switch inputTitle {
+                case "count":
+                    numCount++
+                    state = State.Count
+                case "avg":
+                    avgSum += doubleCheck!
+                    avgCount++
+                    state = State.Avg
+                default:
+                    var total = 1;
+                    for var i = Int(curValue); i > 1; i-- {
+                        total *= i
+                    }
+                    curValue = Double(total)
+                }
+            }
+        }
+        inputs.append(sender)
+    }
+
+    //Event handler for numeric buttons
     @IBAction func buttonPressed(sender: UIButton) {
         let val = sender.titleLabel!.text!
         inputs.append(sender)
@@ -49,6 +92,8 @@ class ViewController: UIViewController {
             
             if intCheck == nil && doubleCheck == nil {
                 updateCurValue(amount!, lastInputTitle: title!);
+               // title == "%" ? updateWindow("\(curValue)") : updateWindow("\(amount!)")
+                updateWindow("\(amount!)")
             } else {
                 curValue = (curValue * 10) + amount!
                 updateWindow("\(curValue)")
@@ -86,21 +131,12 @@ class ViewController: UIViewController {
                 curValue *= amount
             case "/":
                 curValue /= amount
-            case "count":
-                numCount++
-            case "avg":
-                avgSum += amount
-                avgCount++
-            case "fact":
-                var total = 1.0;
-                for var i = amount; i > 1; i-- {
-                    total *= i
-                }
-                curValue = total
             default:
-                curValue = curValue % amount
+                let inputCount = inputs.count
+                let lastNumber = (inputCount > 1) ?
+                    Double((inputs[inputCount - 3].titleLabel?.text)!) : 0.0
+                curValue = lastNumber! % amount
         }
-        updateWindow("\(curValue)")
     }
     
     override func viewDidLoad() {
@@ -112,7 +148,5 @@ class ViewController: UIViewController {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-
-
 }
 
